@@ -735,6 +735,59 @@ class BMSScraper {
     console.log('=====================================');
     console.log('');
     
+    // SECOND PASS: Fill missing transaction details for people who bought tickets together
+    console.log('🔄 Filling missing transaction details for group purchases...');
+    const transactionGroups = {};
+    
+    // Group by Trans_Id
+    registrations.forEach(reg => {
+      if (!transactionGroups[reg.Trans_Id]) {
+        transactionGroups[reg.Trans_Id] = [];
+      }
+      transactionGroups[reg.Trans_Id].push(reg);
+    });
+    
+    let filledCount = 0;
+    Object.keys(transactionGroups).forEach(transId => {
+      const group = transactionGroups[transId];
+      if (group.length > 1) {
+        // Find the primary ticket holder (the one with complete transaction details)
+        const primaryHolder = group.find(person => 
+          person.Trans_Date && person.Cinema_Name && person.Event_Name && 
+          person.Show_Date_Disp && person.Ticket_Qty > 0
+        ) || group[0]; // Fallback to first person if none found
+        
+        // Fill missing details for all other people in this transaction
+        group.forEach(person => {
+          if (person !== primaryHolder) {
+            // Copy transaction details from primary holder
+            const fieldsToFill = [
+              'Trans_Date', 'Cinema_Name', 'Event_Name', 'Show_Date_Disp',
+              'Ticketwise_Qty', 'Seat_Info', 'Ticket_Qty', 'Ticket_Amt',
+              'Item_Desc', 'ItemWise_Qty', 'ItemWise_Amt', 'Inv_Qty', 'Inv_Amt',
+              'Additional_Desc', 'Add_strAmt', 'Add_Charges', 'Bkg_Commit'
+            ];
+            
+            let hasEmptyFields = false;
+            fieldsToFill.forEach(field => {
+              if (!person[field] || person[field] === '' || person[field] === 0) {
+                person[field] = primaryHolder[field];
+                hasEmptyFields = true;
+              }
+            });
+            
+            if (hasEmptyFields) {
+              filledCount++;
+              console.log(`✅ Filled transaction details for ${person.first_name} ${person.last_name} (Trans_Id: ${transId})`);
+            }
+          }
+        });
+      }
+    });
+    
+    console.log(`🔄 Filled missing details for ${filledCount} ticket holders in group purchases`);
+    console.log('');
+    
     return registrations;
     
     } catch (error) {

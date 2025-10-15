@@ -610,26 +610,29 @@ class BMSScraper {
                 }
               }
               
-              const customerName = `${firstName} ${lastName}`.trim();
+              let customerName = `${firstName} ${lastName}`.trim();
               const transDate = $(cells[4]).text().trim();
               const transId = $(cells[2]).text().trim();
               
-              // Check for duplicate Trans_Id
-              if (duplicateTransIds.has(transId)) {
-                console.log(`⚠️ Row ${i}: Duplicate Trans_Id found: ${transId} - Skipping`);
-                skippedRows++;
-                return;
-              }
-              
-              // DON'T SKIP - Accept any name data we can get
+              // Handle missing names - use fallback identifier
               if (!customerName || customerName.length === 0) {
                 console.log(`⚠️ Row ${i}: WARNING - No name found, using Trans_Id as identifier: ${transId}`);
                 // Use transaction ID as fallback identifier
                 firstName = `Guest_${transId.substring(0, 8)}`;
                 lastName = '';
+                customerName = `${firstName} ${lastName}`.trim();
               }
               
-              duplicateTransIds.add(transId);
+              // Check for actual duplicate rows (same Trans_Id AND same name)
+              // Multiple people can have same Trans_Id if they bought tickets together
+              const rowKey = `${transId}_${customerName}`;
+              if (duplicateTransIds.has(rowKey)) {
+                console.log(`⚠️ Row ${i}: Duplicate registration found: ${transId} - ${customerName} - Skipping`);
+                skippedRows++;
+                return;
+              }
+              
+              duplicateTransIds.add(rowKey);
               
               registrations.push({
                 // All 45 BMS fields - EXACT mapping from dataFetcher.ts
@@ -716,12 +719,13 @@ class BMSScraper {
     });
 
     console.log('');
-    console.log('=== REGISTRATION PARSING SUMMARY ===');
+    console.log('=== TICKET HOLDER PARSING SUMMARY ===');
     console.log(`📊 Total rows processed: ${totalRowsProcessed}`);
-    console.log(`✅ Successfully parsed: ${registrations.length}`);
+    console.log(`🎫 Ticket holders parsed: ${registrations.length}`);
     console.log(`⚠️ Skipped rows: ${skippedRows}`);
-    console.log(`🔍 Unique Trans_Ids: ${duplicateTransIds.size}`);
-    console.log('===================================');
+    console.log(`🔍 Unique registrations: ${new Set(registrations.map(r => r.Trans_Id)).size}`);
+    console.log(`👥 Total ticket holders: ${registrations.length}`);
+    console.log('=====================================');
     console.log('');
     
     return registrations;
@@ -1165,7 +1169,7 @@ class BMSScraper {
       
       const duration = Date.now() - startTime;
       console.log(`✅ Scraping completed in ${duration}ms`);
-      console.log(`📊 Events: ${events.length}, Registrations: ${registrations.length}`);
+      console.log(`📊 Events: ${events.length}, Ticket Holders: ${registrations.length}`);
       
     } catch (error) {
       console.error('❌ Scraping failed:', error);

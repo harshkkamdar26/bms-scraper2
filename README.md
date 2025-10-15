@@ -40,7 +40,7 @@ npm test
 ## GitHub Actions
 
 This scraper runs automatically via GitHub Actions:
-- **Schedule**: Every 15 minutes
+- **Schedule**: Every 30 minutes (optimized for efficiency)
 - **Manual trigger**: Via GitHub Actions UI
 - **External trigger**: Via repository dispatch API
 

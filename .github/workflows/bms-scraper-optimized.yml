@@ -1,0 +1,61 @@
+name: BMS Scraper - Optimized (Every 30 Minutes)
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual triggering
+  repository_dispatch: # Allow external API triggering
+    types: [scrape]
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10 # Optimized timeout - fail fast if hanging
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --only=production
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run optimized BMS scraper
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          BMS_USERNAME: ${{ secrets.BMS_USERNAME }}
+          BMS_PASSWORD: ${{ secrets.BMS_PASSWORD }}
+          NODE_OPTIONS: '--no-experimental-fetch'
+        run: |
+          echo "🚀 Starting optimized BMS scraper at $(date)"
+          echo "📊 Target: Global Youth Festival 2025 data"
+          timeout 480 npm run scrape || echo "⚠️ Scraper timed out after 8 minutes"
+          echo "✅ Scraper completed at $(date)"
+
+      - name: Upload debug artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bms-debug-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            debug-*.html
+            debug-*.png
+            *.log
+          retention-days: 3 # Shorter retention to save storage
+
+      - name: Performance summary
+        if: always()
+        run: |
+          echo "📈 Workflow Performance Summary:"
+          echo "⏰ Started: $(date -d '@${{ github.event.head_commit.timestamp }}' 2>/dev/null || echo 'Manual trigger')"
+          echo "🔄 Run #${{ github.run_number }}, Attempt #${{ github.run_attempt }}"
+          echo "💾 Check MongoDB for latest data in collections: eventsummaries, registrationdetails"

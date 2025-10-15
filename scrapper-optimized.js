@@ -121,25 +121,38 @@ class OptimizedBMSScraper {
 
       const currentUrl = this.page.url();
       
-      if (currentUrl.includes('login.aspx')) {
-        console.log('🔑 On login page, filling credentials...');
+      if (currentUrl.includes('default.aspx?LOGOUT')) {
+        console.log('🔑 Filling login credentials...');
         
-        // Fill credentials quickly without waiting
-        await Promise.all([
-          this.page.fill('#txtUserName', this.bmsUsername),
-          this.page.fill('#txtPassword', this.bmsPassword)
-        ]);
+        // Wait for form elements to be available (correct field names)
+        await this.page.waitForSelector('input[name="txtUserId"]', { timeout: 10000 });
+        await this.page.waitForSelector('input[name="txtPassword"]', { timeout: 10000 });
+        await this.page.waitForSelector('input[name="cmdLogin"]', { timeout: 10000 });
         
-        // Submit and wait for navigation
-        await Promise.all([
-          this.page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }),
-          this.page.click('#btnLogin')
-        ]);
+        // Fill login form with correct field names
+        await this.page.fill('input[name="txtUserId"]', this.bmsUsername);
+        await this.page.fill('input[name="txtPassword"]', this.bmsPassword);
         
+        // Submit login form with correct button name
+        await this.page.click('input[name="cmdLogin"]');
+        
+        // Wait for successful login
+        await this.page.waitForURL('**/home.aspx', { timeout: 15000 });
         console.log('✅ Login successful');
+        
+        // Brief wait for session
+        await new Promise(resolve => setTimeout(resolve, 500));
       } else {
         console.log('✅ Already logged in');
       }
+      
+      // Test navigation to report page to verify login
+      console.log('🧪 Testing navigation to event summary report page...');
+      await this.page.goto('https://bo.bookmyshow.com/Reports/rptEventwiseSummary.aspx', {
+        waitUntil: 'domcontentloaded',
+        timeout: 15000
+      });
+      console.log('✅ Event summary report page accessible!');
       
       this.logStep('Login process', stepStart);
       return true;
@@ -154,11 +167,8 @@ class OptimizedBMSScraper {
     console.log('📊 Getting event summary with optimizations...');
     
     try {
-      // Navigate to event summary page
-      await this.page.goto('https://bo.bookmyshow.com/EventSummary.aspx', {
-        waitUntil: 'domcontentloaded',
-        timeout: 10000
-      });
+      // Already on the event summary page from login verification
+      console.log('✅ Already on event summary page from login verification');
       
       // Quick form token extraction
       const [viewState, eventValidation] = await Promise.all([
@@ -241,7 +251,7 @@ class OptimizedBMSScraper {
     console.log('📝 Getting registration details with optimizations...');
     
     try {
-      await this.page.goto('https://bo.bookmyshow.com/RegistrationDetails.aspx', {
+      await this.page.goto('https://bo.bookmyshow.com/Reports/rptFormRegistrationReport.aspx', {
         waitUntil: 'domcontentloaded',
         timeout: 10000
       });

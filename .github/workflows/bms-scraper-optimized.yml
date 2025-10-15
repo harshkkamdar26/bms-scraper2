@@ -61,7 +61,7 @@ jobs:
           echo "  - MongoDB URI: ${MONGODB_URI:0:20}..." 
           echo "  - BMS Username: $BMS_USERNAME"
           echo "  - BMS Password: ${BMS_PASSWORD:0:3}***"
-          timeout 600 npm run scrape || echo "⚠️ Scraper timed out after 10 minutes"
+          timeout 600 node scrapper.js || echo "⚠️ Scraper timed out after 10 minutes"
           echo "✅ Scraper completed at $(date)"
 
       - name: Upload debug artifacts (on failure)

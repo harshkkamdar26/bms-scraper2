@@ -634,7 +634,14 @@ class BMSScraper {
               
               duplicateTransIds.add(rowKey);
               
+              // Create unique identifier for each ticket holder using timestamp + random
+              const uniqueTicketHolderId = `${transId}_${customerName.replace(/\s+/g, '_')}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              
               registrations.push({
+                // Add unique identifier for this specific ticket holder
+                registrationId: uniqueTicketHolderId,
+                ticketHolderIndex: registrations.filter(r => r.Trans_Id === transId).length + 1,
+                
                 // All 45 BMS fields - EXACT mapping from dataFetcher.ts
                 BackgroundColor: $(cells[0]).text().trim(),
                 Bkg_Id: $(cells[1]).text().trim(),
@@ -872,13 +879,36 @@ class BMSScraper {
         console.log('⚠️ No events to save');
       }
       
-      // Save registrations to the CORRECT collection name (camelCase)
+      // Save ticket holders to registrationDetails collection
       if (registrations.length > 0) {
-        await db.collection('registrationDetails').deleteMany({});
-        await db.collection('registrationDetails').insertMany(registrations);
-        console.log(`✅ Saved ${registrations.length} registrations to registrationDetails collection`);
+        console.log(`🗑️ Clearing existing registrationDetails collection...`);
+        const deleteResult = await db.collection('registrationDetails').deleteMany({});
+        console.log(`🗑️ Deleted ${deleteResult.deletedCount} existing records`);
+        
+        console.log(`💾 Inserting ${registrations.length} ticket holder records...`);
+        
+        // Drop any existing unique indexes that might cause conflicts
+        try {
+          await db.collection('registrationDetails').dropIndex('registrationId_1');
+          console.log('🗑️ Dropped existing registrationId unique index');
+        } catch (error) {
+          // Index might not exist, that's fine
+          console.log('ℹ️ No existing registrationId index to drop');
+        }
+        
+        // Insert all records
+        await db.collection('registrationDetails').insertMany(registrations, { ordered: false });
+        console.log(`✅ Saved ${registrations.length} ticket holders to registrationDetails collection`);
+        
+        // Create a new unique index on our custom registrationId
+        await db.collection('registrationDetails').createIndex(
+          { registrationId: 1 }, 
+          { unique: true, name: 'registrationId_unique' }
+        );
+        console.log('✅ Created unique index on registrationId field');
+        
       } else {
-        console.log('⚠️ No registrations to save');
+        console.log('⚠️ No ticket holders to save');
       }
       
       // Update last fetch log

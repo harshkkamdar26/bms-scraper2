@@ -1,0 +1,51 @@
+name: BMS Data Scraper
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+  repository_dispatch:
+    # Allow external triggering via API
+    types: [scrape]
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Playwright browsers
+      run: npx playwright install chromium --with-deps
+      
+    - name: Run scraper
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        BMS_USERNAME: ${{ secrets.BMS_USERNAME }}
+        BMS_PASSWORD: ${{ secrets.BMS_PASSWORD }}
+        NODE_OPTIONS: '--no-experimental-fetch'
+      run: npm run scrape
+      
+    - name: Upload logs and screenshots on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: scraper-debug-files
+        path: |
+          *.log
+          *.png
+          screenshots/
+        retention-days: 7

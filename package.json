@@ -1,0 +1,20 @@
+{
+  "name": "bms-scraper",
+  "version": "1.0.0",
+  "description": "BMS data scraper for Global Youth Festival 2025",
+  "main": "scrapper.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "scrape": "node scrapper-optimized.js",
+    "scrape-original": "node scrapper.js",
+    "test": "node scrapper-optimized.js"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "cheerio": "^1.0.0-rc.12",
+    "mongodb": "^6.3.0",
+    "dotenv": "^16.3.1"
+  }
+}

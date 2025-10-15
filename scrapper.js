@@ -887,25 +887,29 @@ class BMSScraper {
         
         console.log(`💾 Inserting ${registrations.length} ticket holder records...`);
         
-        // Drop any existing unique indexes that might cause conflicts
+        // Drop ALL existing indexes to avoid conflicts (except _id)
         try {
-          await db.collection('registrationDetails').dropIndex('registrationId_1');
-          console.log('🗑️ Dropped existing registrationId unique index');
+          const indexes = await db.collection('registrationDetails').indexes();
+          for (const index of indexes) {
+            if (index.name !== '_id_') {
+              try {
+                await db.collection('registrationDetails').dropIndex(index.name);
+                console.log(`🗑️ Dropped existing index: ${index.name}`);
+              } catch (dropError) {
+                console.log(`ℹ️ Could not drop index ${index.name}: ${dropError.message}`);
+              }
+            }
+          }
         } catch (error) {
-          // Index might not exist, that's fine
-          console.log('ℹ️ No existing registrationId index to drop');
+          console.log('ℹ️ No existing indexes to drop or error listing indexes');
         }
         
-        // Insert all records
+        // Insert all records (MongoDB will use _id as unique identifier)
         await db.collection('registrationDetails').insertMany(registrations, { ordered: false });
         console.log(`✅ Saved ${registrations.length} ticket holders to registrationDetails collection`);
         
-        // Create a new unique index on our custom registrationId
-        await db.collection('registrationDetails').createIndex(
-          { registrationId: 1 }, 
-          { unique: true, name: 'registrationId_unique' }
-        );
-        console.log('✅ Created unique index on registrationId field');
+        // Don't create any unique indexes - let MongoDB handle uniqueness with _id
+        console.log('ℹ️ Using MongoDB _id field for uniqueness (no custom indexes created)');
         
       } else {
         console.log('⚠️ No ticket holders to save');

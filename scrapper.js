@@ -1269,9 +1269,22 @@ class BMSScraper {
 
 // Run the scraper
 if (require.main === module) {
+  const { calculateDashboardStats } = require('./calculate-stats');
+  
   const scraper = new BMSScraper();
-  scraper.run().then(() => {
+  scraper.run().then(async () => {
     console.log('🎉 Scraper finished successfully');
+    
+    // Calculate and save dashboard stats
+    console.log('\n📊 Calculating dashboard statistics...');
+    try {
+      await calculateDashboardStats();
+      console.log('✅ Dashboard stats calculated and saved');
+    } catch (error) {
+      console.error('❌ Failed to calculate dashboard stats:', error);
+      // Don't fail the scraper if stats calculation fails
+    }
+    
     process.exit(0);
   }).catch(error => {
     console.error('💥 Scraper crashed:', error);

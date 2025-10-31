@@ -234,6 +234,67 @@ async function calculateDashboardStats() {
     const firstTimersUnder40Percentage = firstTimers > 0 ? ((firstTimersUnder40 / firstTimers) * 100).toFixed(2) : '0';
     const firstTimersUnknownAgePercentage = firstTimers > 0 ? ((firstTimersUnknownAge / firstTimers) * 100).toFixed(2) : '0';
     
+    // Calculate registration trends (group by date)
+    console.log('📅 Calculating registration trends...');
+    const parseTransDate = (transDate) => {
+      if (!transDate || typeof transDate !== 'string') return null;
+      try {
+        const datePart = transDate.split(' ')[0];
+        const [day, month, year] = datePart.split('-');
+        return `${year}-${month}-${day}`;
+      } catch {
+        return null;
+      }
+    };
+    
+    const groupedData = {};
+    registrations.forEach(reg => {
+      const dateStr = parseTransDate(reg.Trans_Date);
+      if (dateStr) {
+        if (!groupedData[dateStr]) {
+          groupedData[dateStr] = { count: 0 };
+        }
+        const ticketQty = reg.Ticket_Qty || 1;
+        groupedData[dateStr].count += ticketQty;
+      }
+    });
+    
+    const allTimeRegistrations = Object.entries(groupedData)
+      .map(([date, data]) => ({
+        _id: date,
+        count: data.count
+      }))
+      .sort((a, b) => a._id.localeCompare(b._id));
+    
+    // Calculate referral stats (only for registrations before Oct 9)
+    console.log('👥 Calculating referral stats...');
+    const referralCutoffDate = '2025-10-09';
+    const referralStats = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    
+    for (const reg of registrations) {
+      const regDate = parseTransDate(reg.Trans_Date);
+      
+      if (regDate && regDate >= referralCutoffDate) {
+        continue;
+      }
+      
+      let inviteeCount = 0;
+      
+      for (let i = 1; i <= 5; i++) {
+        const nameKey = `name_${i}`;
+        const mobileKey = `mobile_number_${i}`;
+        const emailKey = `email_id_${i}`;
+        
+        if ((reg[nameKey] && reg[nameKey] !== '') || 
+            (reg[mobileKey] && reg[mobileKey] !== '') || 
+            (reg[emailKey] && reg[emailKey] !== '')) {
+          inviteeCount++;
+        }
+      }
+      
+      referralStats[inviteeCount]++;
+    }
+    
     // Build stats object
     const stats = {
       calculatedAt: new Date(),
@@ -280,7 +341,11 @@ async function calculateDashboardStats() {
         registered: arpitMemberRegistrations.size,
         notRegistered: arpitMembers.length - arpitMemberRegistrations.size
       },
-      groupRegistrationStats
+      groupRegistrationStats,
+      registrationTrends: {
+        allTime: allTimeRegistrations
+      },
+      referralStats
     };
     
     // Save to database

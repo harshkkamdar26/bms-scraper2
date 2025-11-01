@@ -665,7 +665,7 @@ class BMSScraper {
                 Add_Charges: this.parseNumber($(cells[19]).text()) || 0,
                 first_name: firstName, // Column 20
                 last_name: lastName, // Column 21
-                age: this.parseNumber($(cells[22]).text()) || this.parseNumber($(cells[45]).text()) || 0, // Column 22 (or 45 for new age_16_only_ field)
+                age: this.parseNumber($(cells[22]).text()) || this.parseNumber($(cells[53]).text()) || 0, // Column 22 (old age) or Column 53 (new age_16_only_)
                 gender: $(cells[23]).text().trim(), // Column 23
                 primary_phoneNo: $(cells[24]).text().trim(), // Column 24
                 primary_email: this.extractProtectedEmail($(cells[25]).text().trim()), // Column 25

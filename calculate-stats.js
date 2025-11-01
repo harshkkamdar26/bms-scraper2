@@ -41,8 +41,8 @@ async function calculateDashboardStats() {
           group: 1
         }
       }).toArray(),
-      db.collection('previousYearParticipants').find({
-        years: { $in: [2019, 2020, 2021, 2022, 2023, 2024] }
+      db.collection('previousyearparticipants').find({
+        years: { $exists: true, $ne: [] }
       }, {
         projection: {
           phone: 1,

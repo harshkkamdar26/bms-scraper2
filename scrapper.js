@@ -112,12 +112,39 @@ class BMSScraper {
         
         console.log('📤 Submitting login form...');
         
+        // Take screenshot before login
+        try {
+          await this.page.screenshot({ path: 'debug-before-login.png', fullPage: true });
+          console.log('📸 Screenshot saved: debug-before-login.png');
+        } catch (e) {
+          console.log('⚠️ Could not save screenshot:', e.message);
+        }
+        
         // Submit login form with correct button name
         await this.page.click('input[name="cmdLogin"]');
         
-        // Wait for successful login
-        await this.page.waitForURL('**/home.aspx', { timeout: 15000 });
-        console.log('✅ Login successful!');
+        // Wait for successful login with longer timeout and better error handling
+        try {
+          await this.page.waitForURL('**/home.aspx', { timeout: 30000 });
+          console.log('✅ Login successful!');
+        } catch (error) {
+          // Take screenshot on failure
+          try {
+            await this.page.screenshot({ path: 'debug-login-failed.png', fullPage: true });
+            console.log('📸 Login failed screenshot saved: debug-login-failed.png');
+          } catch (e) {
+            console.log('⚠️ Could not save failure screenshot');
+          }
+          
+          console.log('📄 Current URL after login attempt:', this.page.url());
+          console.log('📄 Page title after login attempt:', await this.page.title());
+          
+          // Check if there's an error message on the page
+          const bodyText = await this.page.evaluate(() => document.body.innerText);
+          console.log('📄 Page content (first 500 chars):', bodyText.substring(0, 500));
+          
+          throw error;
+        }
         
         // Reduced wait time for session
         await new Promise(resolve => setTimeout(resolve, 500));

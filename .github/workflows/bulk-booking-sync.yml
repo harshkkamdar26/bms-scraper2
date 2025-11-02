@@ -1,0 +1,40 @@
+name: Sync Bulk Bookings from Google Sheets
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run bulk booking sync
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          GOOGLE_SHEETS_CLIENT_EMAIL: ${{ secrets.GOOGLE_SHEETS_CLIENT_EMAIL }}
+          GOOGLE_SHEETS_PRIVATE_KEY: ${{ secrets.GOOGLE_SHEETS_PRIVATE_KEY }}
+          GOOGLE_SHEET_URL: ${{ secrets.GOOGLE_SHEET_URL }}
+          BULK_BOOKINGS_TAB_NAME: ${{ secrets.BULK_BOOKINGS_TAB_NAME }}
+          BULK_PARTICIPANTS_TAB_NAME: ${{ secrets.BULK_PARTICIPANTS_TAB_NAME }}
+        run: node sync-bulk-bookings.js
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Bulk booking sync failed!"
+          echo "Check the logs above for details."
+

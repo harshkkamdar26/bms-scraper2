@@ -9,12 +9,15 @@
   "scripts": {
     "scrape": "node scrapper-optimized.js",
     "scrape-original": "node scrapper.js",
+    "sync-bulk": "node sync-bulk-bookings.js",
     "test": "node scrapper-optimized.js"
   },
   "dependencies": {
     "playwright": "^1.40.0",
     "cheerio": "^1.0.0-rc.12",
     "mongodb": "^6.3.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "googleapis": "^128.0.0",
+    "mongoose": "^8.0.0"
   }
 }

@@ -166,11 +166,19 @@ async function calculateDashboardStats() {
       HG: { registered: 0, notRegistered: 0 }
     };
     
+    // Build a Set of registered Arpit member IDs (to avoid double counting)
+    const registeredArpitMembers = new Set();
+    for (const member of arpitMemberRegistrations.values()) {
+      const memberId = `${member.fullName}-${member.mobileNumber}`.toLowerCase();
+      registeredArpitMembers.add(memberId);
+    }
+    
     // Count group totals
     for (const member of arpitMembers) {
       const group = member.group;
       if (group && group in groupRegistrationStats) {
-        const isRegistered = Array.from(arpitMemberRegistrations.values()).some(m => m.fullName === member.fullName);
+        const memberId = `${member.fullName}-${member.mobileNumber}`.toLowerCase();
+        const isRegistered = registeredArpitMembers.has(memberId);
         if (isRegistered) {
           groupRegistrationStats[group].registered++;
         } else {

@@ -172,20 +172,36 @@ async function syncBulkBookings() {
 
       const bookingId = generateBookingId(spocPhone, spocName);
 
-      bulkBookingsData.push({
-        bookingId,
-        spocName,
-        spocPhone,
-        spocEmail,
-        numberOfTickets,
-        ratePerTicket,
-        totalAmount,
-        bookingType: 'bulk', // Default to bulk, can be changed manually if needed
-        paymentReceived,
-        passesGiven,
-        bookingDate: new Date(),
-        eventName: 'Global Youth Festival 2025',
-      });
+      // Check if this SPOC already has a booking - aggregate if so
+      const existingBooking = bulkBookingsData.find(b => b.bookingId === bookingId);
+      
+      if (existingBooking) {
+        // Aggregate: Add to existing booking
+        existingBooking.numberOfTickets += numberOfTickets;
+        existingBooking.totalAmount += totalAmount;
+        // Use the latest payment/passes status
+        existingBooking.paymentReceived = paymentReceived || existingBooking.paymentReceived;
+        existingBooking.passesGiven = passesGiven || existingBooking.passesGiven;
+        // Update rate to be the average
+        existingBooking.ratePerTicket = Math.round(existingBooking.totalAmount / existingBooking.numberOfTickets);
+        console.log(`➕ Aggregated booking for ${spocName}: +${numberOfTickets} tickets (total: ${existingBooking.numberOfTickets})`);
+      } else {
+        // New booking
+        bulkBookingsData.push({
+          bookingId,
+          spocName,
+          spocPhone,
+          spocEmail,
+          numberOfTickets,
+          ratePerTicket,
+          totalAmount,
+          bookingType: 'bulk', // Default to bulk, can be changed manually if needed
+          paymentReceived,
+          passesGiven,
+          bookingDate: new Date(),
+          eventName: 'Global Youth Festival 2025',
+        });
+      }
     }
 
     console.log(`✅ Processed ${bulkBookingsData.length} bulk bookings`);

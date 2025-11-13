@@ -24,7 +24,7 @@ const BulkBookingSchema = new mongoose.Schema({
   numberOfTickets: { type: Number, required: true },
   ratePerTicket: { type: Number },
   totalAmount: { type: Number },
-  bookingType: { type: String, required: true, enum: ['bulk', 'b2b'], default: 'bulk', index: true },
+  category: { type: String, required: true, enum: ['Youth Corporate', 'Corporate', 'Bulk'], default: 'Bulk', index: true },
   paymentReceived: { type: Boolean, required: true, default: false, index: true },
   passesGiven: { type: Boolean, required: true, default: false, index: true },
   bookingDate: { type: Date, required: true, default: Date.now, index: true },
@@ -46,7 +46,8 @@ const BulkBookingParticipantSchema = new mongoose.Schema({
   age: { type: Number },
   gender: { type: String },
   pincode: { type: String },
-  ticketType: { type: String, required: true, enum: ['Bulk Booking', 'B2B Booking'], index: true },
+  category: { type: String, required: true, enum: ['Youth Corporate', 'Corporate', 'Bulk'], default: 'Bulk', index: true },
+  ticketType: { type: String, required: true, index: true },
   quantity: { type: Number, required: true, default: 1 },
   amount: { type: Number },
   paymentStatus: { type: String, required: true, default: 'Confirmed', index: true },
@@ -54,7 +55,7 @@ const BulkBookingParticipantSchema = new mongoose.Schema({
   registrationDate: { type: Date, required: true, default: Date.now, index: true },
   eventName: { type: String, required: true, default: 'Global Youth Festival 2025' },
   showDate: { type: Date, required: true, default: () => new Date('2025-12-06T14:00:00') },
-  dataSource: { type: String, required: true, enum: ['bulk_booking', 'b2b_booking'], default: 'bulk_booking', index: true },
+  dataSource: { type: String, required: true, default: 'bulk_booking', index: true },
 }, {
   timestamps: true,
   collection: 'bulkBookingParticipants'
@@ -134,7 +135,7 @@ async function syncBulkBookings() {
     console.log(`\n📥 Fetching "${BULK_BOOKINGS_TAB_NAME}" data...`);
     const bulkBookingsResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range: `${BULK_BOOKINGS_TAB_NAME}!A:J`,
+      range: `${BULK_BOOKINGS_TAB_NAME}!A:K`,
     });
 
     const bulkBookingsRows = bulkBookingsResponse.data.values || [];
@@ -156,13 +157,20 @@ async function syncBulkBookings() {
       }
 
       const spocName = row[0]?.trim();
-      const spocPhone = row[1]?.trim();
-      const spocEmail = row[2]?.trim();
-      const numberOfTickets = parseInt(row[3]) || 0;
-      const ratePerTicket = parseFloat(row[4]) || 0;
-      const totalAmount = parseFloat(row[5]) || 0;
-      const paymentReceived = normalizeBoolean(row[6]);
-      const passesGiven = normalizeBoolean(row[8]);
+      const categoryRaw = row[1]?.trim() || 'Bulk';
+      const spocPhone = row[2]?.trim();
+      const spocEmail = row[3]?.trim();
+      const numberOfTickets = parseInt(row[4]) || 0;
+      const ratePerTicket = parseFloat(row[5]) || 0;
+      const totalAmount = parseFloat(row[6]) || 0;
+      const paymentReceived = normalizeBoolean(row[7]);
+      const passesGiven = normalizeBoolean(row[9]);
+      
+      // Normalize category value
+      const category = 
+        categoryRaw === 'Youth_Corporate' || categoryRaw === 'Youth Corporate' ? 'Youth Corporate' :
+        categoryRaw === 'Corporate' ? 'Corporate' : 
+        'Bulk';
 
       // Skip if no SPOC name or phone
       if (!spocName || !spocPhone || numberOfTickets === 0) {
@@ -195,7 +203,7 @@ async function syncBulkBookings() {
           numberOfTickets,
           ratePerTicket,
           totalAmount,
-          bookingType: 'bulk', // Default to bulk, can be changed manually if needed
+          category: category,
           paymentReceived,
           passesGiven,
           bookingDate: new Date(),
@@ -277,7 +285,8 @@ async function syncBulkBookings() {
         age,
         gender,
         pincode,
-        ticketType: 'Bulk Booking',
+        category: parentBooking ? parentBooking.category : 'Bulk',
+        ticketType: parentBooking ? parentBooking.category : 'Bulk Booking',
         quantity: 1,
         amount,
         paymentStatus: 'Confirmed',

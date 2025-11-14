@@ -750,7 +750,7 @@ class BMSScraper {
                 MobileNumber: $(cells[50]).text().trim(), // Column 50
                 Email: this.extractProtectedEmail($(cells[51]).text().trim()), // Column 51
                 Remarks: $(cells[52]).text().trim(), // Column 52
-                age_16_only_: this.parseNumber($(cells[53]).text()) || 0 // Column 53,
+                age_16_only_: this.parseNumber($(cells[53]).text()) || 0, // Column 53
                 
                 // Legacy fields for compatibility - EXACT mapping from dataFetcher.ts
                 eventName: $(cells[6]).text().trim() || 'Global Youth Festival 2025',

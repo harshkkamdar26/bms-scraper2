@@ -724,24 +724,33 @@ class BMSScraper {
                 primary_phoneNo: $(cells[24]).text().trim(), // Column 24
                 primary_email: this.extractProtectedEmail($(cells[25]).text().trim()), // Column 25
                 pincode: $(cells[26]).text().trim(), // Column 26
-                do_you_wish_to_take_part_in_a_sports_tournament_tentatively_on_the_29th_and_30th_november_: $(cells[27]).text().trim(),
-                enter_details_of_people_you_d_like_to_refer_for_early_bird_access: $(cells[28]).text().trim(),
-                name_1: $(cells[29]).text().trim(),
-                mobile_number_1: $(cells[30]).text().trim(),
-                email_id_1: this.extractProtectedEmail($(cells[31]).text().trim()),
-                name_2: $(cells[32]).text().trim(),
-                mobile_number_2: $(cells[33]).text().trim(),
-                email_id_2: this.extractProtectedEmail($(cells[34]).text().trim()),
-                name_3: $(cells[35]).text().trim(),
-                mobile_number_3: $(cells[36]).text().trim(),
-                email_id_3: this.extractProtectedEmail($(cells[37]).text().trim()),
-                name_4: $(cells[38]).text().trim(),
-                mobile_number_4: $(cells[39]).text().trim(),
-                email_id_4: this.extractProtectedEmail($(cells[40]).text().trim()),
-                name_5: $(cells[41]).text().trim(),
-                mobile_number_5: $(cells[42]).text().trim(),
-                email_id_5: this.extractProtectedEmail($(cells[43]).text().trim()),
-                i_agree_to_the_terms_and_conditions_: $(cells[44]).text().trim(),
+                do_you_wish_to_take_part_in_a_sports_tournament_tentatively_on_the_29th_and_30th_november_: $(cells[27]).text().trim(), // Column 27
+                enter_details_of_people_you_d_like_to_refer_for_early_bird_access: $(cells[28]).text().trim(), // Column 28
+                name_1: $(cells[29]).text().trim(), // Column 29
+                mobile_number_1: $(cells[30]).text().trim(), // Column 30
+                email_id_1: this.extractProtectedEmail($(cells[31]).text().trim()), // Column 31
+                name_2: $(cells[32]).text().trim(), // Column 32
+                mobile_number_2: $(cells[33]).text().trim(), // Column 33
+                email_id_2: this.extractProtectedEmail($(cells[34]).text().trim()), // Column 34
+                name_3: $(cells[35]).text().trim(), // Column 35
+                mobile_number_3: $(cells[36]).text().trim(), // Column 36
+                email_id_3: this.extractProtectedEmail($(cells[37]).text().trim()), // Column 37
+                name_4: $(cells[38]).text().trim(), // Column 38
+                mobile_number_4: $(cells[39]).text().trim(), // Column 39
+                email_id_4: this.extractProtectedEmail($(cells[40]).text().trim()), // Column 40
+                name_5: $(cells[41]).text().trim(), // Column 41
+                mobile_number_5: $(cells[42]).text().trim(), // Column 42
+                email_id_5: this.extractProtectedEmail($(cells[43]).text().trim()), // Column 43
+                i_agree_to_the_terms_and_conditions_: $(cells[44]).text().trim(), // Column 44
+                full_name: $(cells[45]).text().trim(), // Column 45
+                pin_code: $(cells[46]).text().trim(), // Column 46
+                would_you_be_interested_in_participating_in_a_sports_tournament_happening_on_the_29th_and_30th_november_: $(cells[47]).text().trim(), // Column 47
+                would_you_like_to_participate_in_the_great_inflate_run_on_7th_december_a_high_energy_sunday_morning_experience_at_gyf_featuring_an_inflatable_obstacle_course_cold_plunges_a_juice_bar_mindful_breathing_and_more_included_in_your_gyf_ticket_details_will_follow_after_registration_: $(cells[48]).text().trim(), // Column 48
+                FullName: $(cells[49]).text().trim(), // Column 49
+                MobileNumber: $(cells[50]).text().trim(), // Column 50
+                Email: this.extractProtectedEmail($(cells[51]).text().trim()), // Column 51
+                Remarks: $(cells[52]).text().trim(), // Column 52
+                age_16_only_: this.parseNumber($(cells[53]).text()) || 0 // Column 53,
                 
                 // Legacy fields for compatibility - EXACT mapping from dataFetcher.ts
                 eventName: $(cells[6]).text().trim() || 'Global Youth Festival 2025',

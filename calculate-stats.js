@@ -200,6 +200,7 @@ async function calculateDashboardStats() {
     registrations.forEach(registration => {
       const regPhone = registration.phone || registration.primaryPhoneNo || '';
       const age = parseInt(registration.age) || 0;
+      const ticketQty = parseInt(registration.Ticket_Qty) || 1; // Number of tickets for this registration
       
       // Check if mumukshu
       const isMumukshu = arpitMemberRegistrations.has(registration.registrationId);
@@ -213,28 +214,28 @@ async function calculateDashboardStats() {
       const phone10 = phone && phone.length >= 10 ? phone.slice(-10) : null;
       const isReturning = phone10 && previousPhoneMap.has(phone10);
       
-      // Update counters
+      // Update counters - count by TICKETS not by registration rows
       if (isMumukshu) {
-        mumukshus++;
+        mumukshus += ticketQty; // Count all tickets for this mumukshu
         if (arpitMember && arpitMember.group && arpitMember.group in groupBreakdown) {
-          groupBreakdown[arpitMember.group]++;
+          groupBreakdown[arpitMember.group] += ticketQty;
         }
       } else {
-        nonMumukshus++;
+        nonMumukshus += ticketQty;
       }
       
       if (isReturning) {
-        returningParticipants++;
+        returningParticipants += ticketQty;
       } else {
-        firstTimers++;
+        firstTimers += ticketQty;
         if (age > 0) {
           if (age >= 40) {
-            firstTimersAbove40++;
+            firstTimersAbove40 += ticketQty;
           } else {
-            firstTimersUnder40++;
+            firstTimersUnder40 += ticketQty;
           }
         } else {
-          firstTimersUnknownAge++;
+          firstTimersUnknownAge += ticketQty;
         }
       }
     });

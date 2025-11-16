@@ -613,7 +613,6 @@ class BMSScraper {
     // Find data table
     let totalRowsProcessed = 0;
     let skippedRows = 0;
-    let duplicateTransIds = new Set();
     
     $('table').each((i, table) => {
       const tableText = $(table).text();
@@ -677,16 +676,8 @@ class BMSScraper {
                 customerName = `${firstName} ${lastName}`.trim();
               }
               
-              // Check for actual duplicate rows (same Trans_Id AND same name)
-              // Multiple people can have same Trans_Id if they bought tickets together
-              const rowKey = `${transId}_${customerName}`;
-              if (duplicateTransIds.has(rowKey)) {
-                console.log(`⚠️ Row ${i}: Duplicate registration found: ${transId} - ${customerName} - Skipping`);
-                skippedRows++;
-                return;
-              }
-              
-              duplicateTransIds.add(rowKey);
+              // Keep ALL rows including duplicates to match totalOffLoadedQty
+              // No longer skipping duplicate Trans_Id + customerName combinations
               
               // Create unique identifier for each ticket holder using timestamp + random
               const uniqueTicketHolderId = `${transId}_${customerName.replace(/\s+/g, '_')}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

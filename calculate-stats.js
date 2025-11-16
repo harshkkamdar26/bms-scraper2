@@ -109,9 +109,9 @@ async function calculateDashboardStats() {
           }
         }
         
-        // Use match ONLY if phone or email confirmed (score > 0)
-        // This matches the Arpit Group API logic for consistency
-        if (bestMatch && bestScore > 0) {
+        // Use match if phone/email confirmed OR if it's the only name match
+        // This EXACTLY matches the Arpit Group API logic (line 268)
+        if (bestMatch && (bestScore > 0 || nameMatchingRegs.length === 1)) {
           matchedReg = bestMatch;
         }
       }

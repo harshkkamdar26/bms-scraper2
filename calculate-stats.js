@@ -18,7 +18,7 @@ async function calculateDashboardStats() {
     
     // Fetch all data in parallel
     console.log('📊 Fetching data...');
-    const [registrations, arpitMembers, previousParticipants] = await Promise.all([
+    const [registrations, arpitMembers, previousParticipants, eventSummary] = await Promise.all([
       db.collection('registrationDetails').find({}, {
         projection: {
           customerName: 1,
@@ -50,12 +50,20 @@ async function calculateDashboardStats() {
           years: 1,
           age: 1
         }
-      }).toArray()
+      }).toArray(),
+      db.collection('eventSummaries').findOne({}, {
+        sort: { fetchedAt: -1 },
+        projection: { totalOffLoadedQty: 1 }
+      })
     ]);
     
     console.log(`   Registrations: ${registrations.length}`);
     console.log(`   Arpit Members: ${arpitMembers.length}`);
     console.log(`   Previous Participants: ${previousParticipants.length}`);
+    
+    // Get total tickets from event summary (totalOffLoadedQty = actual tickets distributed)
+    const totalOffLoadedQty = eventSummary?.totalOffLoadedQty || registrations.length;
+    console.log(`   Total Offloaded Qty (Actual Tickets): ${totalOffLoadedQty}`);
     
     // Build Arpit member registration map
     console.log('🔍 Matching Arpit members...');
@@ -230,7 +238,11 @@ async function calculateDashboardStats() {
       }
     });
     
-    const total = registrations.length;
+    // Use totalOffLoadedQty as the total (actual tickets distributed)
+    const total = totalOffLoadedQty;
+    
+    // Recalculate non-mumukshus based on totalOffLoadedQty
+    nonMumukshus = total - mumukshus;
     
     // Calculate percentages
     const mumukshusPercentage = total > 0 ? ((mumukshus / total) * 100).toFixed(2) : '0';

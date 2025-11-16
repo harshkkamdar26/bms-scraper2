@@ -246,8 +246,9 @@ async function calculateDashboardStats() {
     // This matches how Arpit Group API counts (816 people, not 890 tickets)
     const total = registrations.length;
     
-    // Non-mumukshus is already calculated correctly from the loop above
-    // nonMumukshus = total - mumukshus (already done by counting in the loop)
+    // Calculate non-mumukshus: total registrations - mumukshus
+    // (Don't trust the loop count - it may have missed some)
+    nonMumukshus = total - mumukshus;
     
     // Calculate percentages
     const mumukshusPercentage = total > 0 ? ((mumukshus / total) * 100).toFixed(2) : '0';

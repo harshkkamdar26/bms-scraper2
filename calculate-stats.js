@@ -196,11 +196,11 @@ async function calculateDashboardStats() {
       }
     }
     
-    // Process each registration
+    // Process each registration - COUNT BY PEOPLE (unique registrations) not by tickets
+    // This matches the Arpit Group API logic which counts unique people
     registrations.forEach(registration => {
       const regPhone = registration.phone || registration.primaryPhoneNo || '';
       const age = parseInt(registration.age) || 0;
-      const ticketQty = parseInt(registration.Ticket_Qty) || 1; // Number of tickets for this registration
       
       // Check if mumukshu
       const isMumukshu = arpitMemberRegistrations.has(registration.registrationId);
@@ -214,37 +214,38 @@ async function calculateDashboardStats() {
       const phone10 = phone && phone.length >= 10 ? phone.slice(-10) : null;
       const isReturning = phone10 && previousPhoneMap.has(phone10);
       
-      // Update counters - count by TICKETS not by registration rows
+      // Update counters - count by PEOPLE (1 per registration) to match Arpit Group API
       if (isMumukshu) {
-        mumukshus += ticketQty; // Count all tickets for this mumukshu
+        mumukshus++; // Count 1 person (not their ticket quantity)
         if (arpitMember && arpitMember.group && arpitMember.group in groupBreakdown) {
-          groupBreakdown[arpitMember.group] += ticketQty;
+          groupBreakdown[arpitMember.group]++;
         }
       } else {
-        nonMumukshus += ticketQty;
+        nonMumukshus++;
       }
       
       if (isReturning) {
-        returningParticipants += ticketQty;
+        returningParticipants++;
       } else {
-        firstTimers += ticketQty;
+        firstTimers++;
         if (age > 0) {
           if (age >= 40) {
-            firstTimersAbove40 += ticketQty;
+            firstTimersAbove40++;
           } else {
-            firstTimersUnder40 += ticketQty;
+            firstTimersUnder40++;
           }
         } else {
-          firstTimersUnknownAge += ticketQty;
+          firstTimersUnknownAge++;
         }
       }
     });
     
-    // Use totalOffLoadedQty as the total (actual tickets distributed)
-    const total = totalOffLoadedQty;
+    // Use registration count as total (count by PEOPLE not tickets)
+    // This matches how Arpit Group API counts (816 people, not 890 tickets)
+    const total = registrations.length;
     
-    // Recalculate non-mumukshus based on totalOffLoadedQty
-    nonMumukshus = total - mumukshus;
+    // Non-mumukshus is already calculated correctly from the loop above
+    // nonMumukshus = total - mumukshus (already done by counting in the loop)
     
     // Calculate percentages
     const mumukshusPercentage = total > 0 ? ((mumukshus / total) * 100).toFixed(2) : '0';

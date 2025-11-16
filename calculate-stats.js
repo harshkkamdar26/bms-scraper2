@@ -159,7 +159,9 @@ async function calculateDashboardStats() {
     
     // Calculate statistics
     console.log('📈 Calculating statistics...');
-    let mumukshus = 0;
+    
+    // Use the same value as arpitRegistrationStats - no need to count twice!
+    const mumukshus = arpitMemberRegistrations.size; // 816 unique Arpit members matched
     let nonMumukshus = 0;
     let firstTimers = 0;
     let returningParticipants = 0;
@@ -214,9 +216,9 @@ async function calculateDashboardStats() {
       const phone10 = phone && phone.length >= 10 ? phone.slice(-10) : null;
       const isReturning = phone10 && previousPhoneMap.has(phone10);
       
-      // Update counters - count by PEOPLE (1 per registration) to match Arpit Group API
+      // Update counters - mumukshus already set above (arpitMemberRegistrations.size)
+      // Just count group breakdown and non-mumukshus
       if (isMumukshu) {
-        mumukshus++; // Count 1 person (not their ticket quantity)
         if (arpitMember && arpitMember.group && arpitMember.group in groupBreakdown) {
           groupBreakdown[arpitMember.group]++;
         }

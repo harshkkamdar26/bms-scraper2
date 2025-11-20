@@ -477,8 +477,30 @@ class BMSScraper {
       console.log('📄 Current URL:', this.page.url());
       console.log('📄 Page title:', await this.page.title());
       
-      // Step 2: Extract form tokens for POST request
-      console.log('🔍 Extracting form tokens...');
+      // Step 2: Dynamically detect session first, then extract fresh form tokens
+      console.log('🎭 Selecting event to load sessions...');
+      await this.page.selectOption('#cboEvent', 'ET00462825');
+      await this.page.waitForTimeout(2000); // Wait for sessions to load
+      
+      // Dynamically get the available sessions
+      const sessionOptions = await this.page.$$eval('#cboSession option', options => 
+        options.map(opt => ({ value: opt.value, text: opt.textContent.trim() }))
+      );
+      console.log('📅 Available sessions:', JSON.stringify(sessionOptions, null, 2));
+      
+      // Find the first non-empty session
+      const targetSession = sessionOptions.find(s => s.value && s.value !== '') || sessionOptions[1];
+      if (!targetSession || !targetSession.value) {
+        throw new Error('No valid session found in registration form');
+      }
+      console.log('📅 Using session:', targetSession.text);
+      
+      // Now select the session to ensure form is fully updated
+      await this.page.selectOption('#cboSession', targetSession.value);
+      await this.page.waitForTimeout(1000); // Wait for any form updates
+      
+      // Extract form tokens AFTER all form interactions to ensure they're fresh
+      console.log('🔍 Extracting fresh form tokens after session selection...');
       const viewState = await this.page.getAttribute('input[name="__VIEWSTATE"]', 'value') || '';
       const viewStateGenerator = await this.page.getAttribute('input[name="__VIEWSTATEGENERATOR"]', 'value') || '';
       const eventValidation = await this.page.getAttribute('input[name="__EVENTVALIDATION"]', 'value') || '';
@@ -529,31 +551,36 @@ class BMSScraper {
         __EVENTVALIDATION: eventValidation,
         cboCinema: 'JWGM',
         cboEvent: 'ET00462825',
-        cboSession: 'Dec  6 2025  2:00PM',
+        cboSession: targetSession.value,
         chkSelect: 'on',
         hdnCinema: 'JWGM',
         hdnEvent: 'ET00462825',
-        hdnSession: 'Dec  6 2025  2:00PM'
+        hdnSession: targetSession.value
       });
       
       console.log('🔧 Submitting form using Playwright...');
+      console.log('⏳ Waiting for response (up to 90 seconds for large datasets)...');
       
-      // Submit the form and wait for response with timeout (EXACT copy from dataFetcher.ts)
+      // Ensure button is ready
+      await this.page.waitForSelector('#btnShowReport', { state: 'visible', timeout: 5000 });
+      
+      // Submit the form and wait for response with extended timeout for large datasets
       let response;
       try {
         [response] = await Promise.all([
           this.page.waitForResponse(response => 
             response.url().includes('rptFormRegistrationReport.aspx') && 
             response.request().method() === 'POST',
-            { timeout: 30000 } // 30 second timeout
+            { timeout: 90000 } // 90 second timeout for large datasets (2700+ records)
           ),
-          this.page.click('#btnShowReport')
+          this.page.click('#btnShowReport', { force: true })
         ]);
+        console.log('✅ Got POST response from server');
       } catch (error) {
         console.error('❌ Error waiting for response:', error);
-        // Try to get response directly if waitForResponse fails
-        await this.page.click('#btnShowReport');
-        await this.page.waitForTimeout(5000); // Wait 5 seconds for form submission
+        // Fallback: wait for page to finish loading
+        console.log('🔄 Waiting for page to finish loading results...');
+        await this.page.waitForLoadState('networkidle', { timeout: 60000 });
         response = null; // We'll handle this case below
       }
       

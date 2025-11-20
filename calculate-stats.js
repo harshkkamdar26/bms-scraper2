@@ -280,8 +280,8 @@ async function calculateDashboardStats() {
         if (!groupedData[dateStr]) {
           groupedData[dateStr] = { count: 0 };
         }
-        const ticketQty = reg.Ticket_Qty || 1;
-        groupedData[dateStr].count += ticketQty;
+        // Count each REGISTRATION (person), not tickets
+        groupedData[dateStr].count += 1;
       }
     });
     

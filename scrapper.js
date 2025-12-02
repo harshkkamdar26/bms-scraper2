@@ -694,6 +694,35 @@ class BMSScraper {
               const transDate = $(cells[4]).text().trim();
               const transId = $(cells[2]).text().trim();
               
+              // Parse ticket info for complimentary handling
+              const ticketQty = this.parseNumber($(cells[10]).text()) || 1;
+              const ticketAmt = this.parseNumber($(cells[11]).text()) || 0;
+              const seatInfo = $(cells[9]).text().trim();
+              
+              // Check if this is a complimentary ticket
+              const isComplimentary = ticketAmt === 0 || (seatInfo && seatInfo.toLowerCase().includes('complimentary'));
+              
+              // For complimentary tickets: use FullName/MobileNumber if first_name is empty or Guest_
+              const fullNameFromComp = $(cells[49]).text().trim(); // Column 49: FullName
+              const mobileFromComp = $(cells[50]).text().trim(); // Column 50: MobileNumber
+              let phoneNumber = $(cells[24]).text().trim(); // Column 24: primary_phoneNo
+              
+              if (isComplimentary && (!firstName || firstName.startsWith('Guest_') || !customerName || customerName.length === 0)) {
+                if (fullNameFromComp && fullNameFromComp.trim()) {
+                  // Extract name - remove parenthetical notes like "(mybollywoodplaylist)"
+                  const cleanName = fullNameFromComp.split('(')[0].trim();
+                  if (cleanName) {
+                    const nameParts = cleanName.split(' ');
+                    firstName = nameParts[0] || '';
+                    lastName = nameParts.slice(1).join(' ') || '';
+                    customerName = cleanName;
+                  }
+                }
+                if (mobileFromComp && mobileFromComp.trim() && !phoneNumber) {
+                  phoneNumber = mobileFromComp;
+                }
+              }
+              
               // Handle missing names - use fallback identifier
               if (!customerName || customerName.length === 0) {
                 console.log(`⚠️ Row ${i}: WARNING - No name found, using Trans_Id as identifier: ${transId}`);
@@ -703,30 +732,21 @@ class BMSScraper {
                 customerName = `${firstName} ${lastName}`.trim();
               }
               
-              // Keep ALL rows including duplicates to match totalOffLoadedQty
-              // No longer skipping duplicate Trans_Id + customerName combinations
-              
-              // Create unique identifier for each ticket holder using timestamp + random
-              const uniqueTicketHolderId = `${transId}_${customerName.replace(/\s+/g, '_')}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              
-              registrations.push({
-                // Add unique identifier for this specific ticket holder
-                registrationId: uniqueTicketHolderId,
-                ticketHolderIndex: registrations.filter(r => r.Trans_Id === transId).length + 1,
-                
+              // Build the base record object
+              const baseRecord = {
                 // All 45 BMS fields - EXACT mapping from dataFetcher.ts
                 BackgroundColor: $(cells[0]).text().trim(),
                 Bkg_Id: $(cells[1]).text().trim(),
-                Trans_Id: $(cells[2]).text().trim(),
+                Trans_Id: transId,
                 Bkg_Commit: $(cells[3]).text().trim(),
                 Trans_Date: transDate,
                 Cinema_Name: $(cells[5]).text().trim(),
                 Event_Name: $(cells[6]).text().trim() || 'Global Youth Festival 2025',
                 Show_Date_Disp: $(cells[7]).text().trim(),
                 Ticketwise_Qty: this.parseNumber($(cells[8]).text()) || 0,
-                Seat_Info: $(cells[9]).text().trim(),
-                Ticket_Qty: this.parseNumber($(cells[10]).text()) || 1,
-                Ticket_Amt: this.parseNumber($(cells[11]).text()) || 0,
+                Seat_Info: seatInfo,
+                Ticket_Qty: 1, // Always 1 per record (we duplicate for multi-ticket comps)
+                Ticket_Amt: ticketAmt,
                 Item_Desc: $(cells[12]).text().trim(),
                 ItemWise_Qty: this.parseNumber($(cells[13]).text()) || 0,
                 ItemWise_Amt: this.parseNumber($(cells[14]).text()) || 0,
@@ -739,7 +759,7 @@ class BMSScraper {
                 last_name: lastName, // Column 21
                 age: this.parseNumber($(cells[22]).text()) || this.parseNumber($(cells[53]).text()) || 0, // Column 22 (old age) or Column 53 (new age_16_only_)
                 gender: $(cells[23]).text().trim(), // Column 23
-                primary_phoneNo: $(cells[24]).text().trim(), // Column 24
+                primary_phoneNo: phoneNumber, // Column 24 or from FullName for comps
                 primary_email: this.extractProtectedEmail($(cells[25]).text().trim()), // Column 25
                 pincode: $(cells[26]).text().trim(), // Column 26
                 do_you_wish_to_take_part_in_a_sports_tournament_tentatively_on_the_29th_and_30th_november_: $(cells[27]).text().trim(), // Column 27
@@ -760,26 +780,25 @@ class BMSScraper {
                 mobile_number_5: $(cells[42]).text().trim(), // Column 42
                 email_id_5: this.extractProtectedEmail($(cells[43]).text().trim()), // Column 43
                 i_agree_to_the_terms_and_conditions_: $(cells[44]).text().trim(), // Column 44
-                full_name: $(cells[45]).text().trim(), // Column 45
+                full_name: fullNameField, // Column 45
                 pin_code: $(cells[46]).text().trim(), // Column 46
                 would_you_be_interested_in_participating_in_a_sports_tournament_happening_on_the_29th_and_30th_november_: $(cells[47]).text().trim(), // Column 47
                 would_you_like_to_participate_in_the_great_inflate_run_on_7th_december_a_high_energy_sunday_morning_experience_at_gyf_featuring_an_inflatable_obstacle_course_cold_plunges_a_juice_bar_mindful_breathing_and_more_included_in_your_gyf_ticket_details_will_follow_after_registration_: $(cells[48]).text().trim(), // Column 48
-                FullName: $(cells[49]).text().trim(), // Column 49
-                MobileNumber: $(cells[50]).text().trim(), // Column 50
+                FullName: fullNameFromComp, // Column 49
+                MobileNumber: mobileFromComp, // Column 50
                 Email: this.extractProtectedEmail($(cells[51]).text().trim()), // Column 51
                 Remarks: $(cells[52]).text().trim(), // Column 52
                 age_16_only_: this.parseNumber($(cells[53]).text()) || 0, // Column 53
                 
                 // Legacy fields for compatibility - EXACT mapping from dataFetcher.ts
                 eventName: $(cells[6]).text().trim() || 'Global Youth Festival 2025',
-                registrationId: $(cells[2]).text().trim(),
                 customerName: customerName,
-                phone: $(cells[24]).text().trim(), // Column 24: primary_phoneNo
+                phone: phoneNumber, // Column 24 or from FullName for comps
                 email: this.extractProtectedEmail($(cells[25]).text().trim()), // Column 25: primary_email
                 ticketType: $(cells[12]).text().trim() && $(cells[12]).text().trim() !== '-' ? $(cells[12]).text().trim() : 
-                           $(cells[9]).text().trim() && $(cells[9]).text().trim() !== '-' ? $(cells[9]).text().trim() : 'Festival Pass',
-                quantity: this.parseNumber($(cells[10]).text()) || 1,
-                amount: this.parseNumber($(cells[11]).text()) || 0,
+                           seatInfo && seatInfo !== '-' ? seatInfo : 'Festival Pass',
+                quantity: 1, // Always 1 per record
+                amount: ticketAmt,
                 registrationDate: this.parseDate(transDate) || new Date(),
                 paymentStatus: 'Confirmed',
                 bookingReference: $(cells[3]).text().trim(),
@@ -790,10 +809,32 @@ class BMSScraper {
                 reportGeneratedAt: new Date(),
                 dataSource: 'github_actions_scrape',
                 isManualRefresh: false
-              });
+              };
               
-              if (registrations.length <= 10 || registrations.length % 100 === 0) {
-                console.log(`✅ Added registration #${registrations.length}: ${customerName} (${transId})`);
+              // For complimentary tickets with qty > 1, create multiple entries
+              // This ensures registration count matches totalOffLoadedQty
+              const entriesToCreate = (isComplimentary && ticketQty > 1) ? ticketQty : 1;
+              
+              for (let entryIndex = 0; entryIndex < entriesToCreate; entryIndex++) {
+                const record = { ...baseRecord };
+                
+                // Create unique registrationId for each entry
+                if (entriesToCreate > 1) {
+                  // For duplicated complimentary entries, add suffix to make unique
+                  record.registrationId = `${transId}_comp_${entryIndex + 1}`;
+                  if (entryIndex === 0) {
+                    console.log(`🎫 Complimentary ticket ${transId}: Creating ${entriesToCreate} entries for ${customerName}`);
+                  }
+                } else {
+                  // Normal case - use existing unique ID generation
+                  record.registrationId = `${transId}_${customerName.replace(/\s+/g, '_')}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                }
+                
+                registrations.push(record);
+                
+                if (registrations.length <= 10 || registrations.length % 100 === 0) {
+                  console.log(`✅ Added registration #${registrations.length}: ${customerName} (${transId})`);
+                }
               }
             } catch (error) {
               console.warn(`⚠️ Error parsing row ${i}:`, error.message);

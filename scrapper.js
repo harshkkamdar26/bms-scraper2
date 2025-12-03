@@ -818,16 +818,16 @@ class BMSScraper {
               for (let entryIndex = 0; entryIndex < entriesToCreate; entryIndex++) {
                 const record = { ...baseRecord };
                 
-                // Create unique registrationId for each entry
+                // Create registrationId - keep it simple, just use Trans_Id
                 if (entriesToCreate > 1) {
-                  // For duplicated complimentary entries, add suffix to make unique
+                  // For duplicated complimentary entries, add suffix to distinguish
                   record.registrationId = `${transId}_comp_${entryIndex + 1}`;
                   if (entryIndex === 0) {
                     console.log(`🎫 Complimentary ticket ${transId}: Creating ${entriesToCreate} entries for ${customerName}`);
                   }
                 } else {
-                  // Normal case - use existing unique ID generation
-                  record.registrationId = `${transId}_${customerName.replace(/\s+/g, '_')}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                  // Normal case - just use the BMS transaction ID
+                  record.registrationId = transId;
                 }
                 
                 registrations.push(record);

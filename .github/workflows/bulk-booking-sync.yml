@@ -1,9 +1,9 @@
 name: Sync Bulk Bookings from Google Sheets
 
 on:
-  schedule:
+  #schedule:
     # Run every 30 minutes
-    - cron: '*/30 * * * *'
+    #- cron: '*/30 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:

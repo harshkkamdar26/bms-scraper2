@@ -1,9 +1,9 @@
 name: BMS Scraper - Optimized (Every 30 Minutes)
 
 on:
-  schedule:
+  #schedule:
     # Run every 30 minutes
-    - cron: '*/30 * * * *'
+    #- cron: '*/30 * * * *'
   workflow_dispatch: # Allow manual triggering
   repository_dispatch: # Allow external API triggering
     types: [scrape]
